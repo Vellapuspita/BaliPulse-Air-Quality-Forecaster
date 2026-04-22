@@ -1,0 +1,14 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    { "type": "Feature", "properties": { "name": "Jembrana" }, "geometry": { "type": "Polygon", "coordinates": [[[114.45, -8.15], [114.95, -8.15], [114.95, -8.45], [114.45, -8.45], [114.45, -8.15]]] } },
+    { "type": "Feature", "properties": { "name": "Buleleng" }, "geometry": { "type": "Polygon", "coordinates": [[[114.95, -8.05], [115.45, -8.05], [115.45, -8.35], [114.95, -8.35], [114.95, -8.05]]] } },
+    { "type": "Feature", "properties": { "name": "Tabanan" }, "geometry": { "type": "Polygon", "coordinates": [[[114.95, -8.35], [115.15, -8.35], [115.15, -8.65], [114.95, -8.65], [114.95, -8.35]]] } },
+    { "type": "Feature", "properties": { "name": "Badung" }, "geometry": { "type": "Polygon", "coordinates": [[[115.15, -8.35], [115.25, -8.35], [115.25, -8.95], [115.15, -8.95], [115.15, -8.35]]] } },
+    { "type": "Feature", "properties": { "name": "Gianyar" }, "geometry": { "type": "Polygon", "coordinates": [[[115.25, -8.45], [115.35, -8.45], [115.35, -8.65], [115.25, -8.65], [115.25, -8.45]]] } },
+    { "type": "Feature", "properties": { "name": "Denpasar" }, "geometry": { "type": "Polygon", "coordinates": [[[115.18, -8.60], [115.28, -8.60], [115.28, -8.75], [115.18, -8.75], [115.18, -8.60]]] } },
+    { "type": "Feature", "properties": { "name": "Bangli" }, "geometry": { "type": "Polygon", "coordinates": [[[115.30, -8.15], [115.45, -8.15], [115.45, -8.55], [115.30, -8.55], [115.30, -8.15]]] } },
+    { "type": "Feature", "properties": { "name": "Klungkung" }, "geometry": { "type": "Polygon", "coordinates": [[[115.35, -8.45], [115.55, -8.45], [115.55, -8.75], [115.35, -8.75], [115.35, -8.45]]] } },
+    { "type": "Feature", "properties": { "name": "Karangasem" }, "geometry": { "type": "Polygon", "coordinates": [[[115.45, -8.25], [115.75, -8.25], [115.75, -8.55], [115.45, -8.55], [115.45, -8.25]]] } }
+  ]
+}
