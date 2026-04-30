@@ -5,12 +5,13 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { LayoutDashboard, Wind, RefreshCcw } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
+// 1. UPDATE: Menambahkan koordinat Singaraja (Bagian Utara Buleleng)
 const BALI_COORDS = {
     "Denpasar": [-8.6705, 115.2126], "Badung": [-8.5175, 115.1311],
     "Gianyar": [-8.4750, 115.3000], "Tabanan": [-8.4500, 115.0500],
     "Klungkung": [-8.5333, 115.4000], "Bangli": [-8.3000, 115.3500],
     "Karangasem": [-8.3500, 115.5500], "Buleleng": [-8.1120, 115.0880],
-    "Jembrana": [-8.3000, 114.6500]
+    "Jembrana": [-8.3000, 114.6500], "Singaraja": [-8.1120, 115.0880] 
 };
 
 // Batas wilayah koordinat Bali
@@ -34,7 +35,8 @@ function MapUpdater({ center, zoom }) {
 export default function Dashboard() {
     const [regions, setRegions] = useState([]);
     const [data, setData] = useState({ chart: [], map: [], latest: null });
-    const [filter, setFilter] = useState({ region: "", date: "" });
+    // 2. UPDATE: Menambahkan state 'time' dengan default "12:00"
+    const [filter, setFilter] = useState({ region: "", date: "", time: "12:00" });
     const [loading, setLoading] = useState(false);
     
     // Referensi untuk menyimpan instance Leaflet Circle
@@ -43,7 +45,8 @@ export default function Dashboard() {
     useEffect(() => {
         axios.get(`${API_BASE}/init`).then(res => {
             setRegions(res.data.regions);
-            const init = { region: res.data.regions[0], date: res.data.min_date };
+            // UPDATE inisialisasi state dengan format jam default
+            const init = { region: res.data.regions[0], date: res.data.min_date, time: "12:00" };
             setFilter(init);
             fetchDashboard(init);
         }).catch(err => console.error("Koneksi API Gagal"));
@@ -53,6 +56,7 @@ export default function Dashboard() {
         if (!f.date || !f.region) return;
         setLoading(true);
         try {
+            // Kita masih pass f.date ke start. Jika backend nanti perlu jam, bisa digabung: start: `${f.date} ${f.time}`
             const res = await axios.get(`${API_BASE}/dashboard-data`, { params: { region: f.region, start: f.date } });
             setData(res.data);
         } finally { setLoading(false); }
@@ -109,10 +113,19 @@ export default function Dashboard() {
                                 {regions.map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
                         </div>
-                        <div className="flex-1 min-w-[150px] text-left">
+                        
+                        {/* 3. UPDATE: Pembatasan min="2025-01-01" dan max="2026-12-31" */}
+                        <div className="flex-1 min-w-[130px] text-left">
                             <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Tanggal</label>
-                            <input type="date" value={filter.date} onChange={(e) => setFilter({ ...filter, date: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none" />
+                            <input type="date" value={filter.date} min="2025-01-01" max="2026-12-31" onChange={(e) => setFilter({ ...filter, date: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none" />
                         </div>
+
+                        {/* 4. UPDATE: Input Pemilihan Waktu/Jam baru */}
+                        <div className="flex-1 min-w-[100px] text-left">
+                            <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Jam</label>
+                            <input type="time" value={filter.time} onChange={(e) => setFilter({ ...filter, time: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none" />
+                        </div>
+
                         <div className="mt-6">
                             <button onClick={() => fetchDashboard(filter)} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black text-sm hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all h-[46px]">UPDATE DATA</button>
                         </div>

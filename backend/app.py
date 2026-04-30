@@ -60,13 +60,17 @@ def dashboard_data():
         df[region] = pd.to_numeric(df[region], errors='coerce').fillna(0)
         last_data_date = df['Tanggal'].max()
         
+        non_regions = ['Tanggal', 'Waktu', 'index', 'Unnamed: 0', 'datetime', 'DATETIME']
+        
         # A. MODE FORECASTING (2026)
         if target_date > last_data_date:
             last_val = float(df[region].iloc[-1])
             chart_res = []
             curr = last_val
             for h in range(24):
-                curr = max(0, curr + np.random.uniform(-1.5, 2.0))
+                # 5. UPDATE: Memperlebar range nilai uniform menjadi -4.0 s/d 5.0 
+                # Agar dinamika prediksi lebih tinggi (lebih sering menyentuh Hijau dan Merah)
+                curr = max(0, curr + np.random.uniform(-4.0, 5.0))
                 chart_res.append({
                     "tgl": target_date.strftime('%Y-%m-%d'),
                     "waktu": f"{str(h).zfill(2)}:00",
@@ -75,7 +79,21 @@ def dashboard_data():
                     "is_forecast": True
                 })
             latest_val = chart_res[-1]['prediksi']
-            latest_row_map = df.iloc[-1]
+            
+            # --- INTEGRASI PERBAIKAN PETA ---
+            latest_row_map = {}
+            for r in df.columns:
+                if r not in non_regions:
+                    if r == region:
+                        # Samakan nilai region yang dipilih dengan nilai prediksi kartu atas
+                        latest_row_map[r] = latest_val 
+                    else:
+                        # Buat simulasi prediksi untuk region lain agar di peta juga berubah
+                        r_last = float(df[r].iloc[-1]) if pd.notnull(df[r].iloc[-1]) else 0
+                        r_curr = r_last
+                        for _ in range(24):
+                            r_curr = max(0, r_curr + np.random.uniform(-4.0, 5.0))
+                        latest_row_map[r] = r_curr
         
         # B. MODE HISTORIS
         else:
@@ -95,10 +113,13 @@ def dashboard_data():
                     "is_forecast": False
                 })
             latest_val = chart_res[-1]['aktual']
-            latest_row_map = df_f.iloc[-1]
+            
+            # --- INTEGRASI PERBAIKAN PETA ---
+            # Ubah ke dict dan pastikan region utama persis sama
+            latest_row_map = df_f.iloc[-1].to_dict()
+            latest_row_map[region] = latest_val
 
         # Map Data
-        non_regions = ['Tanggal', 'Waktu', 'index', 'Unnamed: 0', 'datetime', 'DATETIME']
         map_data = []
         for r in df.columns:
             if r not in non_regions:
