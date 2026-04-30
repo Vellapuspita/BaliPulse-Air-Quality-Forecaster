@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { MapContainer, TileLayer, Circle, Popup, useMap } from 'react-leaflet';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { LayoutDashboard, Wind, RefreshCcw } from 'lucide-react';
+import { RefreshCcw } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
-// 1. UPDATE: Menambahkan koordinat Singaraja (Bagian Utara Buleleng)
 const BALI_COORDS = {
     "Denpasar": [-8.6705, 115.2126], "Badung": [-8.5175, 115.1311],
     "Gianyar": [-8.4750, 115.3000], "Tabanan": [-8.4500, 115.0500],
@@ -14,38 +13,25 @@ const BALI_COORDS = {
     "Jembrana": [-8.3000, 114.6500], "Singaraja": [-8.1120, 115.0880] 
 };
 
-// Batas wilayah koordinat Bali
-const BALI_BOUNDS = [
-    [-8.9, 114.4], 
-    [-8.0, 115.7]
-];
-
+const BALI_BOUNDS = [ [-8.9, 114.4], [-8.0, 115.7] ];
 const API_BASE = "http://127.0.0.1:5000/api";
 
 function MapUpdater({ center, zoom }) {
     const map = useMap();
-    useEffect(() => {
-        if (center) {
-            map.flyTo(center, zoom, { duration: 1.5 });
-        }
-    }, [center, zoom, map]);
+    useEffect(() => { if (center) { map.flyTo(center, zoom, { duration: 1.5 }); } }, [center, zoom, map]);
     return null;
 }
 
 export default function Dashboard() {
     const [regions, setRegions] = useState([]);
     const [data, setData] = useState({ chart: [], map: [], latest: null });
-    // 2. UPDATE: Menambahkan state 'time' dengan default "12:00"
     const [filter, setFilter] = useState({ region: "", date: "", time: "12:00" });
     const [loading, setLoading] = useState(false);
-    
-    // Referensi untuk menyimpan instance Leaflet Circle
     const circleRefs = useRef({});
 
     useEffect(() => {
         axios.get(`${API_BASE}/init`).then(res => {
             setRegions(res.data.regions);
-            // UPDATE inisialisasi state dengan format jam default
             const init = { region: res.data.regions[0], date: res.data.min_date, time: "12:00" };
             setFilter(init);
             fetchDashboard(init);
@@ -56,190 +42,134 @@ export default function Dashboard() {
         if (!f.date || !f.region) return;
         setLoading(true);
         try {
-            // Kita masih pass f.date ke start. Jika backend nanti perlu jam, bisa digabung: start: `${f.date} ${f.time}`
             const res = await axios.get(`${API_BASE}/dashboard-data`, { params: { region: f.region, start: f.date } });
             setData(res.data);
         } finally { setLoading(false); }
     };
 
-    // Efek untuk membuka popup secara otomatis saat region berubah
     useEffect(() => {
         let timeoutId;
         if (filter.region && circleRefs.current[filter.region]) {
-            // Memberikan sedikit delay agar popup terbuka mulus bersamaan dengan animasi flyTo
             timeoutId = setTimeout(() => {
                 const layer = circleRefs.current[filter.region];
-                // Cek apakah popup sudah terbuka atau belum, jika belum buka popupnya
-                if (layer && !layer.isPopupOpen()) {
-                    layer.openPopup();
-                }
+                if (layer && !layer.isPopupOpen()) { layer.openPopup(); }
             }, 800); 
         }
         return () => clearTimeout(timeoutId);
     }, [filter.region, data.map]);
 
+    // HANYA MENGEMBALIKAN KONTEN UTAMA, TANPA SIDEBAR
     return (
-        <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-left text-slate-900">
-            {/* Sidebar */}
-            <aside className="w-64 bg-slate-900 p-6 flex flex-col hidden lg:flex border-r border-slate-800">
-                <div className="text-white font-black text-2xl mb-12 flex items-center gap-3">
-                    <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/40"><Wind size={20} /></div>
-                    BaliPulse
+        <div className="p-8 space-y-6 text-left">
+            <header className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight italic leading-none">Air Quality <span className="text-indigo-600">Forecaster</span></h1>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2 italic">Monitoring Spasial & Estimasi Masa Depan</p>
                 </div>
-                <nav className="space-y-2">
-                    <div className="flex items-center gap-3 p-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-900/20 cursor-pointer">
-                        <LayoutDashboard size={18} /> Dashboard
-                    </div>
-                </nav>
-            </aside>
+                {loading && <RefreshCcw className="animate-spin text-indigo-500" size={20} />}
+            </header>
 
-            {/* Main Content */}
-            <main className="flex-1 p-8 space-y-6 text-left overflow-x-hidden">
-                <header className="flex justify-between items-center">
+            <section className="flex flex-col xl:flex-row gap-6 items-stretch">
+                <div className="flex-1 bg-white p-5 rounded-[2.5rem] border border-slate-200 flex flex-wrap gap-4 items-center shadow-sm">
+                    <div className="w-48 text-left">
+                        <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Lokasi</label>
+                        <select value={filter.region} onChange={(e) => setFilter({ ...filter, region: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-indigo-500/20">
+                            {regions.map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                    </div>
+                    
+                    <div className="flex-1 min-w-[130px] text-left">
+                        <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Tanggal</label>
+                        <input type="date" value={filter.date} min="2025-01-01" max="2026-12-31" onChange={(e) => setFilter({ ...filter, date: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none" />
+                    </div>
+
+                    <div className="flex-1 min-w-[100px] text-left">
+                        <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Jam</label>
+                        <input type="time" value={filter.time} onChange={(e) => setFilter({ ...filter, time: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none" />
+                    </div>
+
+                    <div className="mt-6">
+                        <button onClick={() => fetchDashboard(filter)} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black text-sm hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all h-[46px]">UPDATE DATA</button>
+                    </div>
+                </div>
+
+                <div className={`w-full xl:w-1/3 p-6 rounded-[2.5rem] border transition-all duration-700 flex items-center justify-between shadow-sm ${data.latest?.bg || 'bg-white'} ${data.latest?.border || 'border-slate-200'}`}>
                     <div>
-                        <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight italic leading-none">Air Quality <span className="text-indigo-600">Forecaster</span></h1>
-                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2 italic">Monitoring Spasial & Estimasi Masa Depan</p>
+                        <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${data.latest?.text || 'text-slate-400'}`}>Tingkat Konsentrasi</p>
+                        <h2 className={`text-5xl font-black tracking-tighter ${data.latest?.text || 'text-slate-800'}`}>
+                            {data.latest?.val || "0.0"} <span className="text-sm font-bold opacity-40 italic ml-1 leading-none">µg/m³</span>
+                        </h2>
                     </div>
-                    {loading && <RefreshCcw className="animate-spin text-indigo-500" size={20} />}
-                </header>
-
-                {/* Top Section: Filter & Konsentrasi PM */}
-                <section className="flex flex-col xl:flex-row gap-6 items-stretch">
-                    {/* Kotak Filter */}
-                    <div className="flex-1 bg-white p-5 rounded-[2.5rem] border border-slate-200 flex flex-wrap gap-4 items-center shadow-sm">
-                        <div className="w-48 text-left">
-                            <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Lokasi</label>
-                            <select value={filter.region} onChange={(e) => setFilter({ ...filter, region: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-indigo-500/20">
-                                {regions.map(r => <option key={r} value={r}>{r}</option>)}
-                            </select>
-                        </div>
-                        
-                        {/* 3. UPDATE: Pembatasan min="2025-01-01" dan max="2026-12-31" */}
-                        <div className="flex-1 min-w-[130px] text-left">
-                            <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Tanggal</label>
-                            <input type="date" value={filter.date} min="2025-01-01" max="2026-12-31" onChange={(e) => setFilter({ ...filter, date: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none" />
-                        </div>
-
-                        {/* 4. UPDATE: Input Pemilihan Waktu/Jam baru */}
-                        <div className="flex-1 min-w-[100px] text-left">
-                            <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Jam</label>
-                            <input type="time" value={filter.time} onChange={(e) => setFilter({ ...filter, time: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none" />
-                        </div>
-
-                        <div className="mt-6">
-                            <button onClick={() => fetchDashboard(filter)} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black text-sm hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all h-[46px]">UPDATE DATA</button>
-                        </div>
-                    </div>
-
-                    {/* Kotak Informasi Konsentrasi PM */}
-                    <div className={`w-full xl:w-1/3 p-6 rounded-[2.5rem] border transition-all duration-700 flex items-center justify-between shadow-sm ${data.latest?.bg || 'bg-white'} ${data.latest?.border || 'border-slate-200'}`}>
-                        <div>
-                            <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${data.latest?.text || 'text-slate-400'}`}>Tingkat Konsentrasi</p>
-                            <h2 className={`text-5xl font-black tracking-tighter ${data.latest?.text || 'text-slate-800'}`}>
-                                {data.latest?.val || "0.0"} <span className="text-sm font-bold opacity-40 italic ml-1 leading-none">µg/m³</span>
-                            </h2>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                            <span className={`px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-white/60 ${data.latest?.text || 'text-slate-400'} border border-current/10`}>
-                                {data.latest?.label || "Standby"}
-                            </span>
-                            <span className={`text-[10px] font-bold uppercase italic ${data.latest?.text || 'text-slate-400'} opacity-80`}>
-                                Lokasi: {filter.region || "Pilih Lokasi"}
-                            </span>
-                        </div>
-                    </div>
-                </section>
-
-                {/* AQI GUIDE */}
-                <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[
-                        { range: "0 - 12", label: "BAIK", color: "bg-emerald-500", desc: "Aman beraktivitas" },
-                        { range: "12 - 35", label: "SEDANG", color: "bg-yellow-500", desc: "Sensitif waspada" },
-                        { range: "35 - 55", label: "SENSITIF", color: "bg-orange-500", desc: "Kurangi luar ruang" },
-                        { range: "> 55", label: "BURUK", color: "bg-red-500", desc: "Wajib masker" }
-                    ].map((item, idx) => (
-                        <div key={idx} className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-                            <div className={`w-1.5 h-10 rounded-full ${item.color}`} />
-                            <div className="text-left">
-                                <p className="text-[9px] font-black text-slate-400 uppercase leading-none">{item.range}</p>
-                                <p className="text-xs font-black text-slate-800 uppercase my-0.5">{item.label}</p>
-                                <p className="text-[8px] text-slate-500 font-medium leading-tight">{item.desc}</p>
-                            </div>
-                        </div>
-                    ))}
-                </section>
-
-                {/* Peta dan Chart Bersebelahan */}
-                <div className="grid grid-cols-12 gap-6">
-                    {/* Map Section */}
-                    <div className="col-span-12 lg:col-span-7 xl:col-span-7 bg-white p-2 rounded-[3rem] border border-slate-200 shadow-sm min-h-[450px] relative overflow-hidden text-left">
-                        <MapContainer 
-                            center={BALI_COORDS[filter.region] || [-8.4, 115.1]} 
-                            zoom={filter.region ? 11 : 9.5} 
-                            style={{ height: '100%', width: '100%', borderRadius: '2.5rem' }} 
-                            zoomControl={false}
-                            maxBounds={BALI_BOUNDS}
-                            maxBoundsViscosity={1.0}
-                            minZoom={9}
-                        >
-                            <MapUpdater 
-                                center={BALI_COORDS[filter.region] || [-8.4, 115.1]} 
-                                zoom={filter.region ? 11 : 9.5} 
-                            />
-                            <TileLayer 
-                                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" 
-                                bounds={BALI_BOUNDS}
-                            />
-                            {data.map.map((m) => (
-                                <Circle
-                                    key={`${m.name}-${m.color}-${filter.date}`}
-                                    center={BALI_COORDS[m.name] || [-8.4, 115.1]}
-                                    radius={3500 + (m.val * 80)}
-                                    pathOptions={{ fillColor: m.color, color: m.color, fillOpacity: 0.5, weight: 2 }}
-                                    // Menyimpan referensi circle ke dalam useRef
-                                    ref={(r) => circleRefs.current[m.name] = r}
-                                >
-                                    <Popup><div className="text-center font-bold font-sans"><b>{m.name}</b><br />{m.val} µg/m³</div></Popup>
-                                </Circle>
-                            ))}
-                        </MapContainer>
-                    </div>
-
-                    {/* Chart Section */}
-                    <div className="col-span-12 lg:col-span-5 xl:col-span-5 bg-white p-8 rounded-[3rem] border border-slate-200 shadow-sm flex flex-col h-[450px]">
-                        <div className="mb-6 text-left">
-                            <h3 className="text-lg font-black text-slate-800 tracking-tight uppercase italic leading-none">Analisis Tren 24 Jam</h3>
-                            {data.chart[0]?.is_forecast && <span className="inline-block mt-2 text-[8px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 uppercase tracking-[0.2em] animate-pulse">Recursive Prediction Mode Active</span>}
-                        </div>
-                        <div className="flex-1 w-full text-left min-h-0">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={data.chart} margin={{ top: 10, right: 25, left: -20, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="colorInd" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} /><stop offset="95%" stopColor="#6366f1" stopOpacity={0} /></linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                    <XAxis dataKey="waktu" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 900 }} dy={15} minTickGap={15} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 900 }} />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Area type="monotone" dataKey={data.chart[0]?.is_forecast ? "prediksi" : "aktual"} stroke="#6366f1" strokeWidth={4} fill="url(#colorInd)" animationDuration={1500} />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
+                    <div className="flex flex-col items-end gap-2">
+                        <span className={`px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-white/60 ${data.latest?.text || 'text-slate-400'} border border-current/10`}>
+                            {data.latest?.label || "Standby"}
+                        </span>
+                        <span className={`text-[10px] font-bold uppercase italic ${data.latest?.text || 'text-slate-400'} opacity-80`}>
+                            Lokasi: {filter.region || "Pilih Lokasi"}
+                        </span>
                     </div>
                 </div>
-            </main>
+            </section>
+
+            <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                    { range: "0 - 12", label: "BAIK", color: "bg-emerald-500", desc: "Aman beraktivitas" },
+                    { range: "12 - 35", label: "SEDANG", color: "bg-yellow-500", desc: "Sensitif waspada" },
+                    { range: "35 - 55", label: "SENSITIF", color: "bg-orange-500", desc: "Kurangi luar ruang" },
+                    { range: "> 55", label: "BURUK", color: "bg-red-500", desc: "Wajib masker" }
+                ].map((item, idx) => (
+                    <div key={idx} className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
+                        <div className={`w-1.5 h-10 rounded-full ${item.color}`} />
+                        <div className="text-left">
+                            <p className="text-[9px] font-black text-slate-400 uppercase leading-none">{item.range}</p>
+                            <p className="text-xs font-black text-slate-800 uppercase my-0.5">{item.label}</p>
+                            <p className="text-[8px] text-slate-500 font-medium leading-tight">{item.desc}</p>
+                        </div>
+                    </div>
+                ))}
+            </section>
+
+            <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-12 lg:col-span-7 xl:col-span-7 bg-white p-2 rounded-[3rem] border border-slate-200 shadow-sm min-h-[450px] relative overflow-hidden text-left">
+                    <MapContainer center={BALI_COORDS[filter.region] || [-8.4, 115.1]} zoom={filter.region ? 11 : 9.5} style={{ height: '100%', width: '100%', borderRadius: '2.5rem' }} zoomControl={false} maxBounds={BALI_BOUNDS} maxBoundsViscosity={1.0} minZoom={9}>
+                        <MapUpdater center={BALI_COORDS[filter.region] || [-8.4, 115.1]} zoom={filter.region ? 11 : 9.5} />
+                        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" bounds={BALI_BOUNDS} />
+                        {data.map.map((m) => (
+                            <Circle key={`${m.name}-${m.color}-${filter.date}`} center={BALI_COORDS[m.name] || [-8.4, 115.1]} radius={3500 + (m.val * 80)} pathOptions={{ fillColor: m.color, color: m.color, fillOpacity: 0.5, weight: 2 }} ref={(r) => circleRefs.current[m.name] = r}>
+                                <Popup><div className="text-center font-bold font-sans"><b>{m.name}</b><br />{m.val} µg/m³</div></Popup>
+                            </Circle>
+                        ))}
+                    </MapContainer>
+                </div>
+
+                <div className="col-span-12 lg:col-span-5 xl:col-span-5 bg-white p-8 rounded-[3rem] border border-slate-200 shadow-sm flex flex-col h-[450px]">
+                    <div className="mb-6 text-left">
+                        <h3 className="text-lg font-black text-slate-800 tracking-tight uppercase italic leading-none">Analisis Tren 24 Jam</h3>
+                        {data.chart[0]?.is_forecast && <span className="inline-block mt-2 text-[8px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 uppercase tracking-[0.2em] animate-pulse">Recursive Prediction Mode Active</span>}
+                    </div>
+                    <div className="flex-1 w-full text-left min-h-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={data.chart} margin={{ top: 10, right: 25, left: -20, bottom: 0 }}>
+                                <defs><linearGradient id="colorInd" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} /><stop offset="95%" stopColor="#6366f1" stopOpacity={0} /></linearGradient></defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                                <XAxis dataKey="waktu" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 900 }} dy={15} minTickGap={15} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 900 }} />
+                                <Tooltip content={({ active, payload }) => {
+                                    if (active && payload && payload.length) {
+                                        return (
+                                            <div className="bg-slate-900/95 backdrop-blur-md text-white p-4 rounded-2xl shadow-2xl border border-slate-700 text-[10px] text-left">
+                                                <p className="font-black text-indigo-400 mb-2 uppercase border-b border-slate-800 pb-2">{payload[0].payload.tgl} | {payload[0].payload.waktu}</p>
+                                                <div className="font-bold uppercase tracking-tighter">Value: {payload[0].value.toFixed(2)} µg/m³</div>
+                                            </div>
+                                        );
+                                    } return null;
+                                }} />
+                                <Area type="monotone" dataKey={data.chart[0]?.is_forecast ? "prediksi" : "aktual"} stroke="#6366f1" strokeWidth={4} fill="url(#colorInd)" animationDuration={1500} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
-
-const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-        return (
-            <div className="bg-slate-900/95 backdrop-blur-md text-white p-4 rounded-2xl shadow-2xl border border-slate-700 text-[10px] text-left">
-                <p className="font-black text-indigo-400 mb-2 uppercase border-b border-slate-800 pb-2 text-left">{payload[0].payload.tgl} | {payload[0].payload.waktu}</p>
-                <div className="font-bold uppercase tracking-tighter text-left">Value: {payload[0].value.toFixed(2)} µg/m³</div>
-            </div>
-        );
-    }
-    return null;
-};
