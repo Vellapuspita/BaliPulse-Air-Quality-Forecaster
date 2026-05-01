@@ -14,7 +14,8 @@ const BALI_COORDS = {
 };
 
 const BALI_BOUNDS = [[-8.9, 114.4], [-8.0, 115.7]];
-const API_BASE = "http://127.0.0.1:5000/api";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:5000/api";
+
 
 function MapUpdater({ center, zoom }) {
     const map = useMap();
