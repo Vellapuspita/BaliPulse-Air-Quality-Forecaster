@@ -4,11 +4,14 @@ import pandas as pd
 import numpy as np
 import os
 
+
 app = Flask(__name__)
 CORS(app)
 
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, 'models', 'data_PM25_clean.pkl')
+
 
 def load_data():
     if not os.path.exists(MODEL_PATH): return None
@@ -20,6 +23,7 @@ def load_data():
     except Exception as e:
         print(f"Error: {e}")
         return None
+
 
 def aqi_logic(val):
     try:
@@ -35,6 +39,15 @@ def aqi_logic(val):
         return {"label": "SENSITIF", "hex": "#f97316", "bg": "bg-orange-50", "text": "text-orange-600", "border": "border-orange-100"}
     else:
         return {"label": "BURUK", "hex": "#ef4444", "bg": "bg-red-50", "text": "text-red-600", "border": "border-red-100"}
+
+
+def parse_waktu_to_hour(waktu_val):
+    """Mengubah nilai kolom Waktu menjadi angka jam (int)."""
+    try:
+        w = str(waktu_val).split(' ')[-1]  # ambil bagian jam jika ada spasi
+        return int(w[:2])                  # ambil 2 karakter pertama sebagai jam
+    except:
+        return -1
 
 
 @app.route('/api/init')
@@ -54,8 +67,12 @@ def dashboard_data():
     try:
         region      = request.args.get('region')
         start_param = request.args.get('start')
-        
+        # FIX: Baca parameter 'time' dari frontend, default "12:00"
+        time_param  = request.args.get('time', '12:00')
+
         target_date = pd.to_datetime(start_param)
+        # Ubah string jam "HH:MM" menjadi integer jam
+        target_hour = int(time_param.split(':')[0])
 
         df = load_data()
         df[region] = pd.to_numeric(df[region], errors='coerce').fillna(0)
@@ -69,7 +86,7 @@ def dashboard_data():
             chart_res = []
             curr = last_val
 
-            # Seed deterministik agar chart konsisten
+            # Seed deterministik: tanggal + region (chart selalu tampilkan 24 jam penuh)
             seed_value = int(target_date.timestamp()) + sum(ord(c) for c in region)
             rng = np.random.default_rng(seed_value)
 
@@ -83,10 +100,10 @@ def dashboard_data():
                     "is_forecast": True
                 })
 
-            # Hitung rata-rata harian untuk indikator utama
-            latest_val = sum(item['prediksi'] for item in chart_res) / len(chart_res)
+            # FIX: latest_val diambil dari JAM yang dipilih user, bukan jam terakhir
+            latest_val = chart_res[target_hour]['prediksi']
 
-            # Hitung rata-rata nilai per region untuk peta
+            # Peta: hitung nilai per region pada jam yang dipilih
             latest_row_map = {}
             for r in df.columns:
                 if r not in non_regions:
@@ -94,11 +111,12 @@ def dashboard_data():
                     r_rng  = np.random.default_rng(r_seed)
                     r_last = float(df[r].iloc[-1]) if pd.notnull(df[r].iloc[-1]) else 0
                     r_curr = r_last
-                    total_r_val = 0
+                    r_val_at_hour = r_curr
                     for h in range(24):
                         r_curr = max(0, r_curr + r_rng.uniform(-4.0, 5.0))
-                        total_r_val += r_curr
-                    latest_row_map[r] = total_r_val / 24
+                        if h == target_hour:
+                            r_val_at_hour = r_curr
+                    latest_row_map[r] = r_val_at_hour
 
         # ── B. MODE HISTORIS ─────────────────────────────────────────────────
         else:
@@ -108,28 +126,34 @@ def dashboard_data():
                 df_f = df.tail(24).copy()
 
             chart_res = []
+            selected_row_val = None
 
             for _, row in df_f.iterrows():
                 val      = float(row[region])
                 w_raw    = str(row['Waktu']).split(' ')[-1] if ' ' in str(row['Waktu']) else str(row['Waktu'])
+                row_hour = parse_waktu_to_hour(row['Waktu'])
 
                 chart_res.append({
                     "tgl"        : row['Tanggal'].strftime('%Y-%m-%d'),
                     "waktu"      : w_raw[:5],
                     "aktual"     : val,
-                    "prediksi"   : val,  # data historis = fakta
+                    "prediksi"   : val,  # data historis = fakta, tidak perlu noise
                     "is_forecast": False
                 })
 
-            # Gunakan rata-rata harian untuk indikator utama
-            latest_val = df_f[region].mean()
+                # FIX: Simpan nilai pada jam yang dipilih user
+                if row_hour == target_hour:
+                    selected_row_val = val
 
-            # Peta menggunakan rata-rata seluruh region pada hari tersebut
-            numeric_df_f = df_f.drop(columns=[col for col in non_regions if col in df_f.columns], errors='ignore')
-            for col in numeric_df_f.columns:
-                numeric_df_f[col] = pd.to_numeric(numeric_df_f[col], errors='coerce')
-            
-            latest_row_map = numeric_df_f.mean().to_dict()
+            # Jika jam yang dipilih tidak ada di data, fallback ke baris terakhir
+            latest_val = selected_row_val if selected_row_val is not None else chart_res[-1]['aktual']
+
+            # FIX: Peta juga menggunakan baris pada jam yang dipilih
+            df_f['_hour'] = df_f['Waktu'].apply(parse_waktu_to_hour)
+            hour_match = df_f[df_f['_hour'] == target_hour]
+            map_row = hour_match.iloc[-1] if not hour_match.empty else df_f.iloc[-1]
+            latest_row_map = map_row.to_dict()
+            latest_row_map[region] = latest_val
 
         # ── MAP DATA ─────────────────────────────────────────────────────────
         map_data = []
