@@ -25,14 +25,16 @@ function MapUpdater({ center, zoom }) {
 export default function Dashboard() {
     const [regions, setRegions] = useState([]);
     const [data, setData] = useState({ chart: [], map: [], latest: null });
-    const [filter, setFilter] = useState({ region: "", date: "", time: "12:00" });
+    // State time dihapus di sini
+    const [filter, setFilter] = useState({ region: "", date: "" });
     const [loading, setLoading] = useState(false);
     const circleRefs = useRef({});
 
     useEffect(() => {
         axios.get(`${API_BASE}/init`).then(res => {
             setRegions(res.data.regions);
-            const init = { region: res.data.regions[0], date: res.data.min_date, time: "12:00" };
+            // Inisialisasi time dihapus di sini
+            const init = { region: res.data.regions[0], date: res.data.min_date };
             setFilter(init);
             fetchDashboard(init);
         }).catch(err => console.error("Koneksi API Gagal"));
@@ -58,7 +60,6 @@ export default function Dashboard() {
         return () => clearTimeout(timeoutId);
     }, [filter.region, data.map]);
 
-    // HANYA MENGEMBALIKAN KONTEN UTAMA, TANPA SIDEBAR
     return (
         <div className="p-8 space-y-6 text-left">
             <header className="flex justify-between items-center">
@@ -83,10 +84,7 @@ export default function Dashboard() {
                         <input type="date" value={filter.date} min="2025-01-01" max="2026-12-31" onChange={(e) => setFilter({ ...filter, date: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none" />
                     </div>
 
-                    <div className="flex-1 min-w-[100px] text-left">
-                        <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Jam</label>
-                        <input type="time" value={filter.time} onChange={(e) => setFilter({ ...filter, time: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none" />
-                    </div>
+                    {/* Div input Jam telah dihapus dari sini */}
 
                     <div className="mt-6">
                         <button onClick={() => fetchDashboard(filter)} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black text-sm hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all h-[46px]">UPDATE DATA</button>
@@ -95,7 +93,7 @@ export default function Dashboard() {
 
                 <div className={`w-full xl:w-1/3 p-6 rounded-[2.5rem] border transition-all duration-700 flex items-center justify-between shadow-sm ${data.latest?.bg || 'bg-white'} ${data.latest?.border || 'border-slate-200'}`}>
                     <div>
-                        <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${data.latest?.text || 'text-slate-400'}`}>Tingkat Konsentrasi</p>
+                        <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${data.latest?.text || 'text-slate-400'}`}>Tingkat Konsentrasi Harian</p>
                         <h2 className={`text-5xl font-black tracking-tighter ${data.latest?.text || 'text-slate-800'}`}>
                             {data.latest?.val || "0.0"} <span className="text-sm font-bold opacity-40 italic ml-1 leading-none">µg/m³</span>
                         </h2>
