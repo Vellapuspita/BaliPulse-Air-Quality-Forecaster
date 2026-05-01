@@ -24,14 +24,16 @@ function MapUpdater({ center, zoom }) {
 export default function Maps() {
     const [regions, setRegions] = useState([]);
     const [data, setData] = useState({ map: [] });
-    const [filter, setFilter] = useState({ region: "", date: "", time: "12:00" });
+    // Menghapus inisialisasi time dari state filter
+    const [filter, setFilter] = useState({ region: "", date: "" });
     const [loading, setLoading] = useState(false);
     const circleRefs = useRef({});
 
     useEffect(() => {
         axios.get(`${API_BASE}/init`).then(res => {
             setRegions(res.data.regions);
-            const init = { region: res.data.regions[0], date: res.data.min_date, time: "12:00" };
+            // Menghapus time dari inisialisasi awal
+            const init = { region: res.data.regions[0], date: res.data.min_date };
             setFilter(init);
             fetchMapData(init);
         });
@@ -78,10 +80,9 @@ export default function Maps() {
                     <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Tanggal</label>
                     <input type="date" value={filter.date} min="2025-01-01" max="2026-12-31" onChange={(e) => setFilter({ ...filter, date: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none" />
                 </div>
-                <div className="flex-1 min-w-[100px] text-left">
-                    <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Jam</label>
-                    <input type="time" value={filter.time} onChange={(e) => setFilter({ ...filter, time: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none" />
-                </div>
+                
+                {/* Blok input Jam telah dihapus dari sini */}
+
                 <div className="mt-6">
                     <button onClick={() => fetchMapData(filter)} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black text-sm hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all h-[46px]">UPDATE PETA</button>
                 </div>
