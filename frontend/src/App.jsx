@@ -1,6 +1,5 @@
 import React, { useState } from 'react'; // Tambahkan useState
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-// Tambahkan import Menu dan X untuk ikon hamburger dan tombol tutup
 import { Wind, Globe, Mail, ShieldCheck, LayoutDashboard, Map as MapIcon, HeartPulse, Info, Menu, X } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import HealthTips from './pages/HealthTips';
