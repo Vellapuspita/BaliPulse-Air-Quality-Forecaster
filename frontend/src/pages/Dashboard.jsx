@@ -5,6 +5,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { RefreshCcw } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
+// Konfigurasi Koordinat Bali
 const BALI_COORDS = {
     "Denpasar": [-8.6705, 115.2126], "Badung": [-8.5175, 115.1311],
     "Gianyar": [-8.4750, 115.3000], "Tabanan": [-8.4500, 115.0500],
@@ -16,7 +17,7 @@ const BALI_COORDS = {
 const BALI_BOUNDS = [[-8.9, 114.4], [-8.0, 115.7]];
 const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:5000/api";
 
-
+// Komponen Helper untuk Update View Peta
 function MapUpdater({ center, zoom }) {
     const map = useMap();
     useEffect(() => {
@@ -32,6 +33,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(false);
     const circleRefs = useRef({});
 
+    // Inisialisasi Data Awal
     useEffect(() => {
         axios.get(`${API_BASE}/init`).then(res => {
             setRegions(res.data.regions);
@@ -41,6 +43,7 @@ export default function Dashboard() {
         }).catch(err => console.error("Koneksi API Gagal"));
     }, []);
 
+    // Fetch Data Dashboard
     const fetchDashboard = async (f) => {
         if (!f.date || !f.region) return;
         setLoading(true);
@@ -50,6 +53,7 @@ export default function Dashboard() {
         } finally { setLoading(false); }
     };
 
+    // Auto-open Popup saat lokasi dipilih
     useEffect(() => {
         let timeoutId;
         if (filter.region && circleRefs.current[filter.region]) {
@@ -62,9 +66,10 @@ export default function Dashboard() {
     }, [filter.region, data.map]);
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6 text-left overflow-x-hidden">
+        /* Container Utama dengan z-0 agar berada di bawah layer Sidebar */
+        <div className="p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6 text-left overflow-x-hidden relative z-0">
 
-            {/* Header */}
+            {/* Header Bagian Atas */}
             <header className="flex justify-between items-center">
                 <div>
                     <h1 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight italic leading-none">
@@ -77,14 +82,12 @@ export default function Dashboard() {
                 {loading && <RefreshCcw className="animate-spin text-indigo-500 shrink-0" size={20} />}
             </header>
 
-            {/* Filter & Konsentrasi */}
+            {/* Section Filter & Kartu Konsentrasi Utama */}
             <section className="flex flex-col xl:flex-row gap-4 md:gap-6 items-stretch">
-
-                {/* Kotak Filter */}
+                
+                {/* Panel Filter Input */}
                 <div className="flex-1 bg-white p-4 md:p-5 rounded-[2rem] md:rounded-[2.5rem] border border-slate-200 shadow-sm">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 items-end">
-
-                        {/* Lokasi */}
                         <div className="text-left">
                             <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Lokasi</label>
                             <select
@@ -95,8 +98,6 @@ export default function Dashboard() {
                                 {regions.map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
                         </div>
-
-                        {/* Tanggal */}
                         <div className="text-left">
                             <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Tanggal</label>
                             <input
@@ -105,8 +106,6 @@ export default function Dashboard() {
                                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none"
                             />
                         </div>
-
-                        {/* Jam */}
                         <div className="text-left">
                             <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1 tracking-widest">Jam</label>
                             <input
@@ -115,8 +114,6 @@ export default function Dashboard() {
                                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none"
                             />
                         </div>
-
-                        {/* Tombol UPDATE DATA */}
                         <div>
                             <button
                                 onClick={() => fetchDashboard(filter)}
@@ -128,53 +125,52 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Kartu Konsentrasi PM */}
+                {/* Kartu Status Konsentrasi Real-time */}
                 <div className={`w-full xl:w-80 p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border transition-all duration-700 flex items-center justify-between shadow-sm shrink-0 ${data.latest?.bg || 'bg-white'} ${data.latest?.border || 'border-slate-200'}`}>
                     <div>
                         <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${data.latest?.text || 'text-slate-400'}`}>
-                            Tingkat Konsentrasi
+                            Konsentrasi PM2.5
                         </p>
                         <h2 className={`text-4xl md:text-5xl font-black tracking-tighter ${data.latest?.text || 'text-slate-800'}`}>
                             {data.latest?.val || "0.0"}
                             <span className="text-sm font-bold opacity-40 italic ml-1 leading-none">µg/m³</span>
                         </h2>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                        <span className={`px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-white/60 ${data.latest?.text || 'text-slate-400'} border border-current/10`}>
+                    <div className="flex flex-col items-end gap-2 text-right">
+                        <span className={`px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-white/60 border border-current/10 ${data.latest?.text || 'text-slate-400'}`}>
                             {data.latest?.label || "Standby"}
                         </span>
-                        <span className={`text-[10px] font-bold uppercase italic ${data.latest?.text || 'text-slate-400'} opacity-80 text-right`}>
-                            Lokasi: {filter.region || "Pilih Lokasi"}
+                        <span className={`text-[10px] font-bold uppercase italic opacity-80 ${data.latest?.text || 'text-slate-400'}`}>
+                            {filter.region}
                         </span>
                     </div>
                 </div>
             </section>
 
-            {/* AQI Guide */}
+            {/* Section Panduan Indeks Kualitas Udara */}
             <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 {[
-                    { range: "0 - 12", label: "BAIK", color: "bg-emerald-500", desc: "Aman beraktivitas" },
-                    { range: "12 - 35", label: "SEDANG", color: "bg-yellow-500", desc: "Sensitif waspada" },
-                    { range: "35 - 55", label: "SENSITIF", color: "bg-orange-500", desc: "Kurangi luar ruang" },
-                    { range: "> 55", label: "BURUK", color: "bg-red-500", desc: "Wajib masker" }
+                    { range: "0 - 12", label: "BAIK", color: "bg-emerald-500" },
+                    { range: "12 - 35", label: "SEDANG", color: "bg-yellow-500" },
+                    { range: "35 - 55", label: "SENSITIF", color: "bg-orange-500" },
+                    { range: "> 55", label: "BURUK", color: "bg-red-500" }
                 ].map((item, idx) => (
-                    <div key={idx} className="bg-white p-3 md:p-4 rounded-2xl md:rounded-3xl border border-slate-100 shadow-sm flex items-center gap-3 md:gap-4">
-                        <div className={`w-1.5 h-8 md:h-10 rounded-full shrink-0 ${item.color}`} />
+                    <div key={idx} className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3 md:gap-4">
+                        <div className={`w-1.5 h-8 rounded-full shrink-0 ${item.color}`} />
                         <div className="text-left min-w-0">
                             <p className="text-[9px] font-black text-slate-400 uppercase leading-none">{item.range}</p>
                             <p className="text-[11px] md:text-xs font-black text-slate-800 uppercase my-0.5">{item.label}</p>
-                            <p className="text-[8px] text-slate-500 font-medium leading-tight">{item.desc}</p>
                         </div>
                     </div>
                 ))}
             </section>
 
-            {/* Peta & Chart */}
+            {/* Section Visualisasi: Peta Spasial & Grafik Tren */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
 
-                {/* Map */}
+                {/* Perbaikan Peta Spasial (Leaflet) */}
                 <div
-                    className="lg:col-span-7 bg-white p-2 rounded-[2.5rem] md:rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden"
+                    className="lg:col-span-7 bg-white p-2 rounded-[2.5rem] md:rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden z-0"
                     style={{ height: '380px' }}
                 >
                     <MapContainer
@@ -212,30 +208,19 @@ export default function Dashboard() {
                     </MapContainer>
                 </div>
 
-                {/* Chart */}
+                {/* Grafik Tren Temporal Recharts */}
                 <div
                     className="lg:col-span-5 bg-white p-5 md:p-8 rounded-[2.5rem] md:rounded-[3rem] border border-slate-200 shadow-sm flex flex-col"
                     style={{ height: '380px' }}
                 >
-                    <div className="mb-4 md:mb-6 text-left shrink-0">
+                    <div className="mb-4 text-left shrink-0">
                         <h3 className="text-base md:text-lg font-black text-slate-800 tracking-tight uppercase italic leading-none">
                             Analisis Tren 24 Jam
                         </h3>
-                        {data.chart[0]?.is_forecast && (
-                            <span className="inline-block mt-2 text-[8px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 uppercase tracking-[0.2em] animate-pulse">
-                                Recursive Prediction Mode Active
-                            </span>
-                        )}
                     </div>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={data.chart} margin={{ top: 10, right: 15, left: -25, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorInd" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                                 <XAxis dataKey="waktu" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 9, fontWeight: 900 }} dy={15} minTickGap={20} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 9, fontWeight: 900 }} />
@@ -245,7 +230,7 @@ export default function Dashboard() {
                                     dataKey={data.chart[0]?.is_forecast ? "prediksi" : "aktual"}
                                     stroke="#6366f1"
                                     strokeWidth={3}
-                                    fill="url(#colorInd)"
+                                    fillOpacity={0.1}
                                     animationDuration={1500}
                                 />
                             </AreaChart>
@@ -257,6 +242,7 @@ export default function Dashboard() {
     );
 }
 
+// Tooltip Kustom untuk Grafik
 const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
         return (
@@ -265,7 +251,7 @@ const CustomTooltip = ({ active, payload }) => {
                     {payload[0].payload.tgl} | {payload[0].payload.waktu}
                 </p>
                 <div className="font-bold uppercase tracking-tighter">
-                    Value: {payload[0].value.toFixed(2)} µg/m³
+                    Konsentrasi: {payload[0].value.toFixed(2)} µg/m³
                 </div>
             </div>
         );
