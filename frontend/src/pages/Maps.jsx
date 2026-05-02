@@ -100,5 +100,83 @@ export default function Maps() {
                 </MapContainer>
             </div>
         </main>
+    );import React, { useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Circle, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Konfigurasi Statis
+const BALI_COORDS = {
+    "Denpasar": [-8.6705, 115.2126], "Badung": [-8.5175, 115.1311],
+    "Gianyar": [-8.4750, 115.3000], "Tabanan": [-8.4500, 115.0500],
+    "Klungkung": [-8.5333, 115.4000], "Bangli": [-8.3000, 115.3500],
+    "Karangasem": [-8.3500, 115.5500], "Buleleng": [-8.1120, 115.0880],
+    "Jembrana": [-8.3000, 114.6500], "Singaraja": [-8.1120, 115.0880] 
+};
+const BALI_BOUNDS = [[-8.9, 114.4], [-8.0, 115.7]];
+
+function MapUpdater({ center, zoom }) {
+    const map = useMap();
+    useEffect(() => { 
+        if (center) { map.flyTo(center, zoom, { duration: 1.5 }); } 
+    }, [center, zoom, map]);
+    return null;
+}
+
+export default function Maps({ data = [] }) {
+    const circleRefs = useRef({});
+
+    // Default view jika tidak ada region yang dipilih (Zoom Out Bali)
+    const defaultCenter = [-8.4, 115.1];
+    const defaultZoom = 9.5;
+
+    return (
+        <div className="flex-1 bg-white p-2 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden min-h-[600px] h-full w-full">
+            <MapContainer 
+                center={defaultCenter} 
+                zoom={defaultZoom} 
+                style={{ height: '100%', width: '100%', borderRadius: '2.5rem' }} 
+                zoomControl={false} 
+                maxBounds={BALI_BOUNDS} 
+                maxBoundsViscosity={1.0} 
+                minZoom={9}
+            >
+                <MapUpdater center={defaultCenter} zoom={defaultZoom} />
+                <TileLayer 
+                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" 
+                    attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+                />
+                
+                {data.map((m) => (
+                    <Circle 
+                        key={`${m.name}-${m.color}`} 
+                        center={BALI_COORDS[m.name] || defaultCenter} 
+                        radius={3500 + (m.val * 80)} 
+                        pathOptions={{ 
+                            fillColor: m.color, 
+                            color: m.color, 
+                            fillOpacity: 0.5, 
+                            weight: 2 
+                        }} 
+                        ref={(r) => circleRefs.current[m.name] = r}
+                    >
+                        <Popup>
+                            <div className="text-center font-bold font-sans">
+                                <b>{m.name}</b><br />
+                                {m.val} µg/m³
+                            </div>
+                        </Popup>
+                    </Circle>
+                ))}
+            </MapContainer>
+
+            {/* Overlay Label/Keterangan Kecil di Pojok Peta */}
+            <div className="absolute bottom-10 left-10 z-[1000] bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-slate-200 shadow-lg">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">
+                    Distribusi Spasial PM2.5
+                </p>
+                <p className="text-xs font-bold text-slate-900">Pulau Bali</p>
+            </div>
+        </div>
     );
+}
 }
