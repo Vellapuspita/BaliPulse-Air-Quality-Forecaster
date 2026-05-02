@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 // Tambahkan import Menu dan X untuk ikon hamburger dan tombol tutup
 import { Wind, Globe, Mail, ShieldCheck, LayoutDashboard, Map as MapIcon, HeartPulse, Info, Menu, X } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
-import Maps from './pages/Maps';
 import HealthTips from './pages/HealthTips';
 import About from './pages/About';
 
@@ -12,7 +11,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
   const navItems = [
       { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
-      { path: '/maps', label: 'Air Quality Maps', icon: <MapIcon size={18} /> },
       { path: '/health-tips', label: 'Health Tips', icon: <HeartPulse size={18} /> },
       { path: '/about', label: 'About Research', icon: <Info size={18} /> }
   ];
@@ -96,7 +94,6 @@ function App() {
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/maps" element={<Maps />} />
               <Route path="/health-tips" element={<HealthTips />} />
               <Route path="/about" element={<About />} />
             </Routes>
