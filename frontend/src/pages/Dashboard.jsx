@@ -150,10 +150,10 @@ export default function Dashboard() {
             {/* Section Panduan Indeks Kualitas Udara */}
             <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 {[
-                    { range: "0 - 12", label: "BAIK", color: "bg-emerald-500" },
-                    { range: "12 - 35", label: "SEDANG", color: "bg-yellow-500" },
-                    { range: "35 - 55", label: "SENSITIF", color: "bg-orange-500" },
-                    { range: "> 55", label: "BURUK", color: "bg-red-500" }
+                    { range: "0 - 15.5", label: "BAIK", color: "bg-emerald-500", desc: "Aman untuk aktivitas luar"},
+                    { range: "15.6 - 55.4", label: "SEDANG", color: "bg-yellow-500", desc: "Waspada untuk aktivitas luar"},
+                    { range: "55.5 - 150.4", label: "SENSITIF", color: "bg-orange-500", desc: "Hati-hati untuk aktivitas luar"},
+                    { range: "> 150.5 - 250.4", label: "BURUK", color: "bg-red-500", desc: "Sangat berbahaya untuk aktivitas luar"}
                 ].map((item, idx) => (
                     <div key={idx} className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3 md:gap-4">
                         <div className={`w-1.5 h-8 rounded-full shrink-0 ${item.color}`} />
