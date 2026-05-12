@@ -160,6 +160,7 @@ export default function Dashboard() {
                         <div className="text-left min-w-0">
                             <p className="text-[9px] font-black text-slate-400 uppercase leading-none">{item.range}</p>
                             <p className="text-[11px] md:text-xs font-black text-slate-800 uppercase my-0.5">{item.label}</p>
+                            <p className="text-[9px] text-slate-500 leading-tight line-clamp-2">{item.desc}</p>
                         </div>
                     </div>
                 ))}
