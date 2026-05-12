@@ -31,11 +31,11 @@ def aqi_logic(val):
     except:
         return {"label": "N/A", "hex": "#94a3b8", "bg": "bg-slate-50", "text": "text-slate-400", "border": "border-slate-100"}
 
-    if v <= 12.0:
+    if v <= 15.5:
         return {"label": "BAIK", "hex": "#10b981", "bg": "bg-emerald-50", "text": "text-emerald-600", "border": "border-emerald-100"}
-    elif v <= 35.4:
-        return {"label": "SEDANG", "hex": "#eab308", "bg": "bg-yellow-50", "text": "text-yellow-700", "border": "border-yellow-100"}
     elif v <= 55.4:
+        return {"label": "SEDANG", "hex": "#eab308", "bg": "bg-yellow-50", "text": "text-yellow-700", "border": "border-yellow-100"}
+    elif v <= 150.4:
         return {"label": "SENSITIF", "hex": "#f97316", "bg": "bg-orange-50", "text": "text-orange-600", "border": "border-orange-100"}
     else:
         return {"label": "BURUK", "hex": "#ef4444", "bg": "bg-red-50", "text": "text-red-600", "border": "border-red-100"}
